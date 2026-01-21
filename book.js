@@ -1,0 +1,410 @@
+/**
+ * book.js - Rewritten for Spring Boot REST API
+ * 
+ * REMOVED: All Supabase client SDK dependencies
+ * - supabase_token references (replaced with auth_token)
+ * - Supabase-specific error handling
+ * 
+ * NOW USES: Standard fetch() calls to Spring Boot backend
+ * - GET /api/users/me (get current user profile)
+ * - POST /api/reservations (create reservation)
+ * 
+ * Token Storage: JWT token stored in localStorage as 'auth_token'
+ */
+
+// =============================================================================
+// Configuration
+// =============================================================================
+const API_BASE_URL = 'https://cftcbrand-pms-production.up.railway.app';
+
+// =============================================================================
+// DOM Elements
+// =============================================================================
+const nameInput = document.querySelector('#name');
+const surnameInput = document.querySelector('#surname');
+const emailInput = document.querySelector('#email');
+const phoneInput = document.querySelector('#phone');
+const tcknInput = document.querySelector('#tckn');
+const addButton = document.querySelector('#addButton');
+const decrementButton = document.querySelector('#decrementButton');
+const guestCountInput = document.querySelector('#guests');
+const checkinInput = document.querySelector('#checkin');
+const checkoutInput = document.querySelector('#checkout');
+const checkbox1 = document.querySelector('#reservationCheckbox1');
+const checkbox2 = document.querySelector('#reservationCheckbox2');
+const checkbox3 = document.querySelector('#reservationCheckbox3');
+const bookButton = document.querySelector('#book-button');
+
+// =============================================================================
+// State Variables
+// =============================================================================
+let c1 = checkbox1 ? checkbox1.checked : false;
+let c2 = checkbox2 ? checkbox2.checked : false;
+let c3 = checkbox3 ? checkbox3.checked : false;
+
+// =============================================================================
+// Checkbox Event Listeners
+// =============================================================================
+if (checkbox1) {
+    checkbox1.addEventListener('change', (e) => {
+        c1 = e.target.checked;
+        if (!c1) alert('Kullanım Şartlarını kabul etmeniz gerekmektedir!');
+    });
+}
+
+if (checkbox2) {
+    checkbox2.addEventListener('change', (e) => {
+        c2 = e.target.checked;
+        if (!c2) alert('Kullanım Şartlarını kabul etmeniz gerekmektedir!');
+    });
+}
+
+if (checkbox3) {
+    checkbox3.addEventListener('change', (e) => {
+        c3 = e.target.checked;
+        if (!c3) alert('Kullanım Şartlarını kabul etmeniz gerekmektedir!');
+    });
+}
+
+// =============================================================================
+// Utility Functions
+// =============================================================================
+
+/**
+ * Check if user is logged in
+ * @returns {boolean}
+ */
+function isLoggedIn() {
+    const token = localStorage.getItem('auth_token');
+    return !!token;
+}
+
+/**
+ * Get authentication token from localStorage
+ * @returns {string|null}
+ */
+function getAuthToken() {
+    return localStorage.getItem('auth_token');
+}
+
+/**
+ * Convert date string to LocalDateTime format for Spring Boot
+ * @param {string} dateStr - Date string in YYYY-MM-DD format
+ * @param {string} time - Time string (default: '14:00:00' for check-in, '11:00:00' for check-out)
+ * @returns {string} - ISO format datetime string
+ */
+function toLocalDateTime(dateStr, time = '14:00:00') {
+    return `${dateStr}T${time}`;
+}
+
+// =============================================================================
+// API Functions
+// =============================================================================
+
+/**
+ * Get current user profile from Spring Boot API
+ * 
+ * Endpoint: GET /api/users/me
+ * Headers: Authorization: Bearer <token>
+ * Response: { id, email, firstName, lastName, phoneNumber, role }
+ */
+async function getUserData() {
+    try {
+        const token = getAuthToken();
+        if (!token) {
+            console.log('Kullanıcı giriş yapmamış');
+            return;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/users/me`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                console.error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+                // Optionally clear token and redirect to login
+                // localStorage.removeItem('auth_token');
+                // window.location.href = '/login.html';
+                return;
+            }
+            throw new Error(`Kullanıcı bilgileri alınamadı: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Populate form fields with user data
+        if (nameInput) nameInput.value = data.firstName || '';
+        if (surnameInput) surnameInput.value = data.lastName || '';
+        if (emailInput) emailInput.value = data.email || '';
+        if (phoneInput) phoneInput.value = data.phoneNumber || '';
+
+    } catch (err) {
+        console.error('GetUserData hatası:', err);
+    }
+}
+
+/**
+ * Create a reservation via Spring Boot API
+ * 
+ * Endpoint: POST /api/reservations
+ * Headers: 
+ *   - Content-Type: application/json
+ *   - Authorization: Bearer <token> (optional, for authenticated users)
+ * 
+ * Request Body: {
+ *   firstName: string,
+ *   lastName: string,
+ *   email: string,
+ *   phoneNumber: string,
+ *   tcKimlikNo: string,
+ *   propertyId: number,
+ *   startTime: string (ISO datetime),
+ *   endTime: string (ISO datetime),
+ *   totalPrice: number (optional),
+ *   notes: string (optional)
+ * }
+ * 
+ * Response: ReservationResponseDto
+ * 
+ * @param {Object} payload - Reservation data
+ * @returns {Promise<Object>} - Created reservation
+ */
+async function bookReservation(payload) {
+    const token = getAuthToken();
+    
+    const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    };
+    
+    // Add Authorization header if user is logged in
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/reservations`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        
+        // Handle specific error codes
+        if (errorData.code === 9101) {
+            throw new Error('Bu tarihler için rezervasyon yapılamıyor. Lütfen farklı tarihler seçin.');
+        }
+        if (errorData.code === 8003) {
+            throw new Error('Seçilen mülk bulunamadı.');
+        }
+        
+        throw new Error(errorData.message || `Rezervasyon başarısız: ${response.status}`);
+    }
+
+    return response.json();
+}
+
+// =============================================================================
+// Validation Functions
+// =============================================================================
+
+/**
+ * Validate check-in and check-out dates
+ * @returns {boolean}
+ */
+function checkDatesValidity() {
+    const checkinDate = new Date(checkinInput.value);
+    const checkoutDate = new Date(checkoutInput.value);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (isNaN(checkinDate.getTime()) || isNaN(checkoutDate.getTime())) {
+        alert('Lütfen geçerli giriş ve çıkış tarihleri giriniz.');
+        return false;
+    }
+
+    if (checkinDate < today) {
+        alert('Giriş tarihi bugünden önce olamaz.');
+        return false;
+    }
+
+    if (checkoutDate <= checkinDate) {
+        alert('Çıkış tarihi giriş tarihinden sonra olmalıdır.');
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Check if all required fields are filled
+ * @returns {boolean}
+ */
+function requiredFieldsFilled() {
+    if (!nameInput.value.trim() || 
+        !surnameInput.value.trim() || 
+        !emailInput.value.trim() ||
+        !phoneInput.value.trim() || 
+        !checkinInput.value.trim() || 
+        !checkoutInput.value.trim()) {
+        alert('Lütfen tüm gerekli alanları doldurunuz.');
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Validate TC Kimlik No (if provided)
+ * @param {string} tckn 
+ * @returns {boolean}
+ */
+function validateTCKN(tckn) {
+    if (!tckn) return true; // Optional field
+    return /^[0-9]{11}$/.test(tckn);
+}
+
+/**
+ * Validate phone number
+ * @param {string} phone 
+ * @returns {boolean}
+ */
+function validatePhone(phone) {
+    return /^[0-9]{10,11}$/.test(phone);
+}
+
+/**
+ * Validate email format
+ * @param {string} email 
+ * @returns {boolean}
+ */
+function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// =============================================================================
+// Event Handlers
+// =============================================================================
+
+/**
+ * Handle booking form submission
+ * @param {Event} e - Click event
+ */
+async function handleBooking(e) {
+    e.preventDefault();
+
+    // Validate checkboxes
+    if (!c1 || !c2 || !c3) {
+        alert('Kullanım Şartlarını kabul etmeniz gerekmektedir!');
+        return;
+    }
+
+    // Validate dates
+    if (!checkDatesValidity()) {
+        return;
+    }
+
+    // Validate required fields
+    if (!requiredFieldsFilled()) {
+        return;
+    }
+
+    // Validate email
+    if (!validateEmail(emailInput.value.trim())) {
+        alert('Geçerli bir e-posta adresi giriniz.');
+        return;
+    }
+
+    // Validate phone
+    if (!validatePhone(phoneInput.value.trim())) {
+        alert('Telefon numarası 10-11 rakam olmalıdır.');
+        return;
+    }
+
+    // Validate TCKN if provided
+    const tckn = tcknInput ? tcknInput.value.trim() : '';
+    if (tckn && !validateTCKN(tckn)) {
+        alert('TC Kimlik No 11 rakam olmalıdır.');
+        return;
+    }
+
+    // Build payload for Spring Boot API
+    // Note: startTime and endTime must be in ISO LocalDateTime format
+    const payload = {
+        firstName: nameInput.value.trim(),
+        lastName: surnameInput.value.trim(),
+        email: emailInput.value.trim(),
+        phoneNumber: phoneInput.value.trim(),
+        tcKimlikNo: tckn || null,
+        propertyId: 1, // TODO: Get from page context or URL parameter
+        startTime: toLocalDateTime(checkinInput.value, '14:00:00'),  // Check-in at 14:00
+        endTime: toLocalDateTime(checkoutInput.value, '11:00:00'),   // Check-out at 11:00
+        notes: null // Optional: Add notes field if available in form
+    };
+
+    try {
+        const data = await bookReservation(payload);
+        console.log('Rezervasyon başarılı:', data);
+        alert('Rezervasyon başarılı! Rezervasyon numaranız: ' + data.id);
+        
+        // Optionally redirect to confirmation page
+        // window.location.href = `/reservation-confirmation.html?id=${data.id}`;
+
+    } catch (err) {
+        console.error('Rezervasyon hatası:', err);
+        alert('Bir hata oluştu: ' + err.message);
+    }
+}
+
+/**
+ * Increment guest count
+ * @param {Event} e - Click event
+ */
+function addGuests(e) {
+    e.preventDefault();
+    let currentCount = parseInt(guestCountInput.value) || 1;
+    if (currentCount < 12) {
+        guestCountInput.value = currentCount + 1;
+    }
+}
+
+/**
+ * Decrement guest count
+ * @param {Event} e - Click event
+ */
+function decrementGuests(e) {
+    e.preventDefault();
+    let currentCount = parseInt(guestCountInput.value) || 1;
+    if (currentCount > 1) {
+        guestCountInput.value = currentCount - 1;
+    }
+}
+
+// =============================================================================
+// Event Listeners
+// =============================================================================
+if (bookButton) {
+    bookButton.addEventListener('click', handleBooking);
+}
+
+if (addButton) {
+    addButton.addEventListener('click', addGuests);
+}
+
+if (decrementButton) {
+    decrementButton.addEventListener('click', decrementGuests);
+}
+
+// =============================================================================
+// Initialize on Page Load
+// =============================================================================
+
+// Auto-fill user data if logged in (IIFE)
+(async function init() {
+    await getUserData();
+})();
