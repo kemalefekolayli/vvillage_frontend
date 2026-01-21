@@ -67,6 +67,52 @@ if (checkbox3) {
 }
 
 // =============================================================================
+// Date Utility Functions
+// =============================================================================
+
+/**
+ * Parse date string to Date object
+ * Supports both DD/MM/YYYY and YYYY-MM-DD formats
+ * @param {string} dateStr - Date string
+ * @returns {Date} Parsed date object
+ */
+function parseDate(dateStr) {
+    if (!dateStr) return new Date(NaN);
+    
+    // YYYY-MM-DD formatı (ISO)
+    if (dateStr.includes('-')) {
+        return new Date(dateStr);
+    }
+    // DD/MM/YYYY formatı
+    if (dateStr.includes('/')) {
+        const parts = dateStr.split('/');
+        // parts[0] = day, parts[1] = month, parts[2] = year
+        return new Date(parts[2], parts[1] - 1, parts[0]);
+    }
+    return new Date(dateStr);
+}
+
+/**
+ * Convert date string to ISO format (YYYY-MM-DD)
+ * @param {string} dateStr - Date string in DD/MM/YYYY or YYYY-MM-DD format
+ * @returns {string} Date in YYYY-MM-DD format
+ */
+function formatToISO(dateStr) {
+    if (!dateStr) return '';
+    
+    // Already in ISO format
+    if (dateStr.includes('-')) {
+        return dateStr;
+    }
+    // DD/MM/YYYY to YYYY-MM-DD
+    if (dateStr.includes('/')) {
+        const parts = dateStr.split('/');
+        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+    }
+    return dateStr;
+}
+
+// =============================================================================
 // API Functions
 // =============================================================================
 
@@ -152,8 +198,8 @@ async function bookReservation(payload) {
 // =============================================================================
 
 function checkDatesValidity() {
-    const checkinDate = new Date(checkinInput.value);
-    const checkoutDate = new Date(checkoutInput.value);
+    const checkinDate = parseDate(checkinInput.value);
+    const checkoutDate = parseDate(checkoutInput.value);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -243,7 +289,7 @@ async function handleBooking(e) {
         return;
     }
 
-    // Build payload
+    // Build payload - convert dates to ISO format for backend
     const payload = {
         firstName: nameInput.value.trim(),
         lastName: surnameInput.value.trim(),
@@ -251,8 +297,8 @@ async function handleBooking(e) {
         phoneNumber: phoneInput.value.trim(),
         tcKimlikNo: tckn || null,
         propertyId: CURRENT_PROPERTY_ID,
-        startTime: toLocalDateTime(checkinInput.value, '14:00:00'),
-        endTime: toLocalDateTime(checkoutInput.value, '11:00:00'),
+        startTime: toLocalDateTime(formatToISO(checkinInput.value), '14:00:00'),
+        endTime: toLocalDateTime(formatToISO(checkoutInput.value), '11:00:00'),
         notes: null
     };
 

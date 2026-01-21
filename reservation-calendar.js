@@ -30,7 +30,7 @@
     // ==========================================================================
 
     /**
-     * Format: YYYY-MM-DD
+     * Format: YYYY-MM-DD (for internal comparison)
      */
     function formatDateKey(year, month, day) {
         const m = String(month + 1).padStart(2, '0');
@@ -143,11 +143,19 @@
                 $this.datepicker('destroy');
             }
 
-            // Yeniden oluştur - beforeShowDay ile
+            // Yeniden oluştur - beforeShowDay ile ve Turkish locale
             $this.datepicker({
-                dateFormat: 'yy-mm-dd',
-                minDate: 0, // Bugünden önce seçilemez
+                dateFormat: 'dd/mm/yy',  // Turkish format (DD/MM/YYYY)
+                minDate: 0,              // Bugünden önce seçilemez
                 beforeShowDay: beforeShowDay,
+                monthNames: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+                             'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'],
+                monthNamesShort: ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz',
+                                  'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'],
+                dayNames: ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'],
+                dayNamesShort: ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'],
+                dayNamesMin: ['Pa', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'],
+                firstDay: 1,             // Pazartesi ilk gün
                 onChangeMonthYear: function(year, month) {
                     // Ay değişince refresh (gerekirse)
                     setTimeout(() => $(this).datepicker('refresh'), 10);
@@ -240,9 +248,16 @@
 
         /**
          * Belirli bir tarihin dolu olup olmadığını kontrol et
+         * @param {string} dateStr - YYYY-MM-DD veya DD/MM/YYYY formatında tarih
          */
         isReserved: function(dateStr) {
-            return isDateReserved(dateStr);
+            // DD/MM/YYYY formatını YYYY-MM-DD'ye çevir
+            let normalizedDate = dateStr;
+            if (dateStr.includes('/')) {
+                const parts = dateStr.split('/');
+                normalizedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+            return isDateReserved(normalizedDate);
         }
     };
 

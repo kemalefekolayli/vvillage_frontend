@@ -30,10 +30,21 @@
     dynamicyearElm.html(currentYear);
   }
 
-  // Date Picker
+  // Date Picker - with proper date format for Turkish locale
   if ($(".villoz-datepicker").length) {
     $(".villoz-datepicker").each(function () {
-      $(this).datepicker();
+      $(this).datepicker({
+        dateFormat: 'dd/mm/yy',  // Turkish date format (DD/MM/YYYY)
+        minDate: 0,              // Bugünden önce seçilemez
+        monthNames: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+                     'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'],
+        monthNamesShort: ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz',
+                          'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'],
+        dayNames: ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'],
+        dayNamesShort: ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'],
+        dayNamesMin: ['Pa', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'],
+        firstDay: 1              // Pazartesi ilk gün
+      });
     });
   }
 
