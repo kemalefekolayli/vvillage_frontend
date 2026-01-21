@@ -7,7 +7,7 @@
 // =============================================================================
 const emailInputt = document.querySelector('#email-login-page');
 const passwordInputt = document.querySelector('#password-login-page');
-const LoginButton = document.querySelector('#book-login-button');
+const LoginButton = document.querySelector('#bookk-login-button');
 
 // =============================================================================
 // API Functions
@@ -58,6 +58,8 @@ async function handleLogin(e) {
     try {
         const data = await loginWithSpringBoot(email, password);
         console.log('Login başarılı:', data);
+        console.log('Login response:', data);  
+        console.log('Token:', data.token);
 
         const token = data.token;
         if (token) {

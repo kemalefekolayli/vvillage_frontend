@@ -254,6 +254,13 @@ function validateEmail(email) {
 async function handleBooking(e) {
     e.preventDefault();
 
+     // Kullanıcı giriş yapmamışsa login sayfasına yönlendir
+    const token = getAuthToken();
+    if (!token) {
+        alert('Rezervasyon yapmak için giriş yapmanız gerekmektedir.');
+        window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.href);
+        return;
+    }
     // Validate checkboxes
     if (!c1 || !c2 || !c3) {
         alert('Kullanım Şartlarını kabul etmeniz gerekmektedir!');
