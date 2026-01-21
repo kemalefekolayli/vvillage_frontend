@@ -1,4 +1,3 @@
-const API_BASE_URL = 'https://cftcbrand-pms-production.up.railway.app';
 
 // =============================================================================
 // DOM Elements
@@ -98,7 +97,7 @@ if (AcceptCheckBox) {
  * @returns {Promise<Object>} - Auth response with token and user data
  */
 async function registerWithSpringBoot(payload) {
-    const response = await fetch(`${API_BASE_URL}/api/users/register`, {
+    const response = await fetch(`${API_CONFIG.baseUrl}/api/users/register`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

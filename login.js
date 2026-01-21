@@ -22,7 +22,7 @@ const LoginButton = document.querySelector('#book-login-button');
  * @returns {Promise<Object>} - Auth response with token and user data
  */
 async function loginWithSpringBoot(email, password) {
-    const response = await fetch(`${API_BASE_URL}/api/users/login`, {
+    const response = await fetch(`${API_CONFIG.baseUrl}/api/users/login`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

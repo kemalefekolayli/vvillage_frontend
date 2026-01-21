@@ -15,7 +15,7 @@
 // =============================================================================
 // Configuration
 // =============================================================================
-const API_BASE_URL = 'https://cftcbrand-pms-production.up.railway.app';
+
 
 // =============================================================================
 // DOM Elements
@@ -116,7 +116,7 @@ async function getUserData() {
             return;
         }
 
-        const response = await fetch(`${API_BASE_URL}/api/users/me`, {
+        const response = await fetch(`${API_CONFIG.baseUrl}/api/users/me`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -187,7 +187,7 @@ async function bookReservation(payload) {
         headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/reservations`, {
+    const response = await fetch(`${API_CONFIG.baseUrl}/api/reservations`, {
         method: 'POST',
         headers: headers,
         body: JSON.stringify(payload)
