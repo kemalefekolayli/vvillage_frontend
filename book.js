@@ -1,21 +1,21 @@
 /**
- * book.js - Rewritten for Spring Boot REST API
+ * book.js - Rezervasyon Formu
  * 
- * REMOVED: All Supabase client SDK dependencies
- * - supabase_token references (replaced with auth_token)
- * - Supabase-specific error handling
- * 
- * NOW USES: Standard fetch() calls to Spring Boot backend
- * - GET /api/users/me (get current user profile)
- * - POST /api/reservations (create reservation)
- * 
- * Token Storage: JWT token stored in localStorage as 'auth_token'
+ * Bu dosya book.html sayfasında kullanılır.
+ * URL'den propertyId parametresini alır: book.html?propertyId=3
  */
 
 // =============================================================================
-// Configuration
+// Property ID - URL'den al
 // =============================================================================
 
+function getPropertyIdFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const propertyId = urlParams.get('propertyId');
+    return propertyId ? parseInt(propertyId, 10) : 1;
+}
+
+const CURRENT_PROPERTY_ID = getPropertyIdFromURL();
 
 // =============================================================================
 // DOM Elements
@@ -35,21 +35,6 @@ const checkbox2 = document.querySelector('#reservationCheckbox2');
 const checkbox3 = document.querySelector('#reservationCheckbox3');
 const bookButton = document.querySelector('#book-button');
 
-// book.js - En üste ekle
-
-/**
- * URL'den property ID'yi al
- * Örnek: book.html?propertyId=3 → 3 döner
- * @returns {number} Property ID (varsayılan: 1)
- */
-function getPropertyIdFromURL() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const propertyId = urlParams.get('propertyId');
-    return propertyId ? parseInt(propertyId, 10) : 1;
-}
-
-// Global olarak kullanılabilir hale getir
-const CURRENT_PROPERTY_ID = getPropertyIdFromURL();
 // =============================================================================
 // State Variables
 // =============================================================================
@@ -82,46 +67,11 @@ if (checkbox3) {
 }
 
 // =============================================================================
-// Utility Functions
-// =============================================================================
-
-/**
- * Check if user is logged in
- * @returns {boolean}
- */
-function isLoggedIn() {
-    const token = localStorage.getItem('auth_token');
-    return !!token;
-}
-
-/**
- * Get authentication token from localStorage
- * @returns {string|null}
- */
-function getAuthToken() {
-    return localStorage.getItem('auth_token');
-}
-
-/**
- * Convert date string to LocalDateTime format for Spring Boot
- * @param {string} dateStr - Date string in YYYY-MM-DD format
- * @param {string} time - Time string (default: '14:00:00' for check-in, '11:00:00' for check-out)
- * @returns {string} - ISO format datetime string
- */
-function toLocalDateTime(dateStr, time = '14:00:00') {
-    return `${dateStr}T${time}`;
-}
-
-// =============================================================================
 // API Functions
 // =============================================================================
 
 /**
  * Get current user profile from Spring Boot API
- * 
- * Endpoint: GET /api/users/me
- * Headers: Authorization: Bearer <token>
- * Response: { id, email, firstName, lastName, phoneNumber, role }
  */
 async function getUserData() {
     try {
@@ -141,10 +91,7 @@ async function getUserData() {
 
         if (!response.ok) {
             if (response.status === 401) {
-                console.error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
-                // Optionally clear token and redirect to login
-                // localStorage.removeItem('auth_token');
-                // window.location.href = '/login.html';
+                console.error('Oturum süresi dolmuş.');
                 return;
             }
             throw new Error(`Kullanıcı bilgileri alınamadı: ${response.status}`);
@@ -165,29 +112,6 @@ async function getUserData() {
 
 /**
  * Create a reservation via Spring Boot API
- * 
- * Endpoint: POST /api/reservations
- * Headers: 
- *   - Content-Type: application/json
- *   - Authorization: Bearer <token> (optional, for authenticated users)
- * 
- * Request Body: {
- *   firstName: string,
- *   lastName: string,
- *   email: string,
- *   phoneNumber: string,
- *   tcKimlikNo: string,
- *   propertyId: number,
- *   startTime: string (ISO datetime),
- *   endTime: string (ISO datetime),
- *   totalPrice: number (optional),
- *   notes: string (optional)
- * }
- * 
- * Response: ReservationResponseDto
- * 
- * @param {Object} payload - Reservation data
- * @returns {Promise<Object>} - Created reservation
  */
 async function bookReservation(payload) {
     const token = getAuthToken();
@@ -197,7 +121,6 @@ async function bookReservation(payload) {
         'Accept': 'application/json'
     };
     
-    // Add Authorization header if user is logged in
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
     }
@@ -211,7 +134,6 @@ async function bookReservation(payload) {
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         
-        // Handle specific error codes
         if (errorData.code === 9101) {
             throw new Error('Bu tarihler için rezervasyon yapılamıyor. Lütfen farklı tarihler seçin.');
         }
@@ -229,10 +151,6 @@ async function bookReservation(payload) {
 // Validation Functions
 // =============================================================================
 
-/**
- * Validate check-in and check-out dates
- * @returns {boolean}
- */
 function checkDatesValidity() {
     const checkinDate = new Date(checkinInput.value);
     const checkoutDate = new Date(checkoutInput.value);
@@ -257,10 +175,6 @@ function checkDatesValidity() {
     return true;
 }
 
-/**
- * Check if all required fields are filled
- * @returns {boolean}
- */
 function requiredFieldsFilled() {
     if (!nameInput.value.trim() || 
         !surnameInput.value.trim() || 
@@ -274,30 +188,15 @@ function requiredFieldsFilled() {
     return true;
 }
 
-/**
- * Validate TC Kimlik No (if provided)
- * @param {string} tckn 
- * @returns {boolean}
- */
 function validateTCKN(tckn) {
-    if (!tckn) return true; // Optional field
+    if (!tckn) return true;
     return /^[0-9]{11}$/.test(tckn);
 }
 
-/**
- * Validate phone number
- * @param {string} phone 
- * @returns {boolean}
- */
 function validatePhone(phone) {
     return /^[0-9]{10,11}$/.test(phone);
 }
 
-/**
- * Validate email format
- * @param {string} email 
- * @returns {boolean}
- */
 function validateEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
@@ -306,10 +205,6 @@ function validateEmail(email) {
 // Event Handlers
 // =============================================================================
 
-/**
- * Handle booking form submission
- * @param {Event} e - Click event
- */
 async function handleBooking(e) {
     e.preventDefault();
 
@@ -348,8 +243,7 @@ async function handleBooking(e) {
         return;
     }
 
-    // Build payload for Spring Boot API
-    // Note: startTime and endTime must be in ISO LocalDateTime format
+    // Build payload
     const payload = {
         firstName: nameInput.value.trim(),
         lastName: surnameInput.value.trim(),
@@ -357,29 +251,34 @@ async function handleBooking(e) {
         phoneNumber: phoneInput.value.trim(),
         tcKimlikNo: tckn || null,
         propertyId: CURRENT_PROPERTY_ID,
-        startTime: toLocalDateTime(checkinInput.value, '14:00:00'),  // Check-in at 14:00
-        endTime: toLocalDateTime(checkoutInput.value, '11:00:00'),   // Check-out at 11:00
-        notes: null // Optional: Add notes field if available in form
+        startTime: toLocalDateTime(checkinInput.value, '14:00:00'),
+        endTime: toLocalDateTime(checkoutInput.value, '11:00:00'),
+        notes: null
     };
+
+    // Disable button
+    if (bookButton) {
+        bookButton.disabled = true;
+    }
 
     try {
         const data = await bookReservation(payload);
         console.log('Rezervasyon başarılı:', data);
         alert('Rezervasyon başarılı! Rezervasyon numaranız: ' + data.id);
         
-        // Optionally redirect to confirmation page
+        // Optionally redirect
         // window.location.href = `/reservation-confirmation.html?id=${data.id}`;
 
     } catch (err) {
         console.error('Rezervasyon hatası:', err);
         alert('Bir hata oluştu: ' + err.message);
+    } finally {
+        if (bookButton) {
+            bookButton.disabled = false;
+        }
     }
 }
 
-/**
- * Increment guest count
- * @param {Event} e - Click event
- */
 function addGuests(e) {
     e.preventDefault();
     let currentCount = parseInt(guestCountInput.value) || 1;
@@ -388,10 +287,6 @@ function addGuests(e) {
     }
 }
 
-/**
- * Decrement guest count
- * @param {Event} e - Click event
- */
 function decrementGuests(e) {
     e.preventDefault();
     let currentCount = parseInt(guestCountInput.value) || 1;
@@ -418,8 +313,7 @@ if (decrementButton) {
 // =============================================================================
 // Initialize on Page Load
 // =============================================================================
-
-// Auto-fill user data if logged in (IIFE)
 (async function init() {
+    console.log('book.js: Property ID =', CURRENT_PROPERTY_ID);
     await getUserData();
 })();

@@ -129,8 +129,6 @@ async function handleResponse(response) {
         if (response.status === 401) {
             // Token expired or invalid
             clearAuthData();
-            // Optionally redirect to login
-            // window.location.href = '/login.html';
             throw new Error('Oturum süresi doldu. Lütfen tekrar giriş yapın.');
         }
         
@@ -337,7 +335,6 @@ function resetButton(button) {
  * @param {string} message - Error message
  */
 function showError(message) {
-    // Default: use alert. Replace with your toast/notification system
     alert(message);
 }
 
@@ -346,38 +343,5 @@ function showError(message) {
  * @param {string} message - Success message
  */
 function showSuccess(message) {
-    // Default: use alert. Replace with your toast/notification system
     alert(message);
 }
-
-// =============================================================================
-// Export for ES Modules (optional)
-// =============================================================================
-// If using ES modules, uncomment the following:
-/*
-export {
-    API_CONFIG,
-    getAuthToken,
-    setAuthToken,
-    removeAuthToken,
-    isAuthenticated,
-    getStoredUser,
-    setStoredUser,
-    clearAuthData,
-    apiGet,
-    apiPost,
-    apiPut,
-    apiDelete,
-    toLocalDateTime,
-    formatDate,
-    formatDateTime,
-    isValidEmail,
-    isValidPhone,
-    isValidTCKN,
-    isValidPassword,
-    setButtonLoading,
-    resetButton,
-    showError,
-    showSuccess
-};
-*/
