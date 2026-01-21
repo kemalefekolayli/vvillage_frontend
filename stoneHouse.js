@@ -15,7 +15,7 @@
 
 // Property ID - Change this based on the property page
 // TODO: Get from URL parameter or data attribute
-const PROPERTY_ID = 1;
+const PROPERTY_ID = window.CURRENT_PROPERTY_ID || 1;
 
 // =============================================================================
 // jQuery Datepicker Setup

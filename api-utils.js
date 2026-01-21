@@ -1,6 +1,6 @@
 
 const API_CONFIG = {
-    baseUrl: 'https://cftcbrand-pms-production.up.railway.app',  
+    baseUrl: 'http://localhost:8080',  
     tokenKey: 'auth_token',
     userDataKey: 'user_data',
     timeout: 30000

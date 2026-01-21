@@ -35,6 +35,21 @@ const checkbox2 = document.querySelector('#reservationCheckbox2');
 const checkbox3 = document.querySelector('#reservationCheckbox3');
 const bookButton = document.querySelector('#book-button');
 
+// book.js - En üste ekle
+
+/**
+ * URL'den property ID'yi al
+ * Örnek: book.html?propertyId=3 → 3 döner
+ * @returns {number} Property ID (varsayılan: 1)
+ */
+function getPropertyIdFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const propertyId = urlParams.get('propertyId');
+    return propertyId ? parseInt(propertyId, 10) : 1;
+}
+
+// Global olarak kullanılabilir hale getir
+const CURRENT_PROPERTY_ID = getPropertyIdFromURL();
 // =============================================================================
 // State Variables
 // =============================================================================
@@ -341,7 +356,7 @@ async function handleBooking(e) {
         email: emailInput.value.trim(),
         phoneNumber: phoneInput.value.trim(),
         tcKimlikNo: tckn || null,
-        propertyId: 1, // TODO: Get from page context or URL parameter
+        propertyId: CURRENT_PROPERTY_ID,
         startTime: toLocalDateTime(checkinInput.value, '14:00:00'),  // Check-in at 14:00
         endTime: toLocalDateTime(checkoutInput.value, '11:00:00'),   // Check-out at 11:00
         notes: null // Optional: Add notes field if available in form
